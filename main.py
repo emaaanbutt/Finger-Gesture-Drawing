@@ -13,6 +13,9 @@ alpha = 0.25
 canvas = np.zeros_like(frame)
 prev_x, prev_y = None, None 
 
+is_drawing = False
+is_fist = False
+
 
 with mp_hands.Hands(min_detection_confidence=0.7, min_tracking_confidence=0.7) as hands:
     while True:
@@ -27,15 +30,39 @@ with mp_hands.Hands(min_detection_confidence=0.7, min_tracking_confidence=0.7) a
 
                 h, w, c = frame.shape
 
-                index_finger = hand_landmarks.landmark[8]
+                index_tip = hand_landmarks.landmark[8]
+                index_dip = hand_landmarks.landmark[7]
+                index_pip = hand_landmarks.landmark[5]
 
-                ix, iy = int(index_finger.x * w), int(index_finger.y * h)
+                middle_tip = hand_landmarks.landmark[12]
+                middle_pip = hand_landmarks.landmark[10]
 
-                cv2.circle(frame, (ix, iy), 10, (0, 255, 0), -1)
+                ring_tip = hand_landmarks.landmark[16]
+                ring_pip = hand_landmarks.landmark[14]
 
-                if prev_x is not None and prev_y is not None:
-                    cv2.line(canvas, (prev_x, prev_y), (ix, iy), (0,0,255), 3)
+                pinky_tip = hand_landmarks.landmark[20]
+                pinky_pip = hand_landmarks.landmark[18]
+
+                ix, iy = int(index_tip.x * w), int(index_tip.y * h)
+
                 
+                if index_tip.y < index_dip.y:  
+                    is_fist = False
+
+                elif index_tip.y > index_pip.y and middle_tip.y > middle_pip.y and ring_tip.y > ring_pip.y and pinky_tip.y > pinky_pip.y:
+                    is_fist = True
+
+                if is_fist:
+                    is_drawing = False
+                    prev_x, prev_y = None, None 
+
+                else:
+                    is_drawing = True
+
+                if is_drawing:
+                    if prev_x and prev_y is not None:
+                        cv2.circle(frame, (ix, iy), 10, (0, 255, 0), -1)
+                        cv2.line(canvas, (prev_x, prev_y), (ix, iy), (0,0,255), 3)
                 prev_x, prev_y = ix, iy
 
         # combined = cv2.addWeighted(frame, 0.5, canvas, 0.5, 0)
